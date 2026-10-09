@@ -210,7 +210,7 @@ const ENTITIES = {
     "form": [
       { "key": "name", "label": "ชื่อพนักงาน", "type": "text", "icon": "👤", "required": true },
       { "key": "job_position", "label": "ตำแหน่ง", "type": "select", "icon": "💼", "options": ["waiter", "cook", "manager", "cashier"], "required": true },
-      { "key": "work_status", "label": "สถานะการทำงาน", "type": "select", "icon": "🟢", "options": ["active", "on_leave", "resigned", "present", "absent"], "required": true }
+      { "key": "work_status", "label": "สถานะการทำงาน", "type": "select", "icon": "🟢", "options": ["present", "absent"], "required": true }
     ]
   },
   "dining_tables": {
@@ -234,11 +234,11 @@ const ENTITIES = {
     "api": "/api/combo_items",
     "idKey": "combo_id",
     "search": [
-      { "key": "item_id", "label": "เมนูหลัก", "type": "select", "optionsFrom": { "api": "/api/menu-items", "value": "item_id", "label": "name" } }
+      { "key": "item_id", "label": "เมนูหลัก", "type": "select", "optionsFrom": { "api": "/api/menu-items?status=normal", "value": "item_id", "label": "name" } }
     ],
     "form": [
-      { "key": "item_id", "label": "เมนูหลัก", "type": "select", "icon": "🍔", "optionsFrom": { "api": "/api/menu-items", "value": "item_id", "label": "name" }, "required": true },
-      { "key": "sub_item_id", "label": "เมนูย่อย", "type": "select", "icon": "🍟", "optionsFrom": { "api": "/api/menu-items", "value": "item_id", "label": "name" }, "required": true },
+      { "key": "item_id", "label": "เมนูหลัก", "type": "select", "icon": "🍔", "optionsFrom": { "api": "/api/menu-items?status=normal", "value": "item_id", "label": "name" }, "required": true },
+      { "key": "sub_item_id", "label": "เมนูย่อย", "type": "select", "icon": "🍟", "optionsFrom": { "api": "/api/menu-items?status=normal", "value": "item_id", "label": "name" }, "required": true },
       { "key": "amount", "label": "จำนวนเมนูย่อย", "type": "number", "icon": "📦", "required": true }
     ]
   }
@@ -1103,7 +1103,7 @@ async function openOrderModal() {
                    </div>
                 </div>
              `;
-        } else if(item.price) { // fallback
+        } else if(item.price && item.status === 'normal') { // fallback
             itemsContainer.innerHTML += `
                 <div class="order-item-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #E8ECF4;">
                    <div style="flex:1;">
@@ -1222,7 +1222,7 @@ async function openComboModal() {
     const itemsContainer = document.getElementById('comboItemsContainer');
     itemsContainer.innerHTML = '';
     currentMenuItems.forEach(item => {
-        if(item.price) {
+        if(item.price && item.status === 'normal') {
             itemsContainer.innerHTML += `
                 <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #E8ECF4; cursor: pointer;">
                    <input type="checkbox" class="combo-item-cb" value="${item.item_id}" data-price="${item.price}" onchange="recalculateComboTotal()">

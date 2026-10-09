@@ -73,20 +73,27 @@ def get_customer(cust_id):
 def create_customer(data):
     # """เพิ่ม ลูกค้า ใหม่ — data มีคีย์: name, phone, member_tier"""
     # TODO: INSERT INTO customer (...) VALUES (%s, ...)
+    if not data.get("birth_date"):
+        raise ValueError("กรุณาระบุวันเกิด")
     sql = "insert into customer (name, phone, email, birth_date, member_tier) values (%s, %s, %s, %s, %s)"
-    return run_command(sql, (data["name"], data["phone"], data["email"], blank_to_none(data["birth_date"]), data["member_tier"]))
+    return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data["member_tier"]))
 
 
 def update_customer(cust_id, data):
     # """แก้ไข ลูกค้า ตาม cust_id"""
     # TODO: UPDATE customer SET ... WHERE cust_id=%s
+    if not data.get("birth_date"):
+        raise ValueError("กรุณาระบุวันเกิด")
     sql = "update customer set name=%s, phone=%s, email=%s, birth_date=%s, member_tier=%s where cust_id=%s"
     return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data["member_tier"], cust_id))
 
 
 def delete_customer(cust_id):
     # """ลบ ลูกค้า ตาม cust_id"""
-    # TODO: DELETE FROM customer WHERE cust_id=%s
+    # ตรวจสอบว่ามีประวัติการสั่งอาหารหรือไม่ ป้องกันการสูญหายของประวัติลูกค้าในบิล
+    rows = run_query("SELECT COUNT(*) AS n FROM food_order WHERE cust_id = %s", (cust_id,))
+    if rows and rows[0]["n"] > 0:
+        raise ValueError(f"ไม่สามารถลบลูกค้ารหัส {cust_id} ได้เนื่องจากมีประวัติการสั่งอาหารอยู่")
     return run_command("delete from customer where cust_id=%s", (cust_id,))
 
 # ---------- เมนูอาหาร (menu_item) ----------
@@ -107,7 +114,7 @@ def search_items(filters):
         sql += " AND price = %s"
         params.append(filters["price"])
     if filters.get("status") :
-        sql += " AND is_available = %s"
+        sql += " AND status = %s"
         params.append(filters["status"])
     sql += " ORDER BY item_id"  # ไม่เรียงชื่อคอลัมน์ใหม่ → หัวตารางเรียงตามลำดับใน SELECT
     return run_query(sql, params)
@@ -135,9 +142,14 @@ def update_item(item_id, data):
 
 
 def delete_item(item_id):
-    # """ลบ เมนูอาหาร ตาม item_id"""
-    # TODO: DELETE FROM menu_item WHERE item_id=%s
-    return run_command("delete from menu_item where item_id=%s", (item_id,))
+    # """ลบ เมนูอาหาร ตาม item_id (เปลี่ยนสถานะเป็น cancelled แทนการลบจริง)"""
+    # เช็คว่ามีเมนูนี้จริง
+    rows = run_query("SELECT item_id, status FROM menu_item WHERE item_id = %s", (item_id,))
+    if not rows:
+        raise ValueError(f"ไม่พบเมนูอาหารรหัส {item_id}")
+    if rows[0]["status"] == "cancelled":
+        raise ValueError("เมนูนี้ถูกยกเลิกแล้ว")
+    return run_command("UPDATE menu_item SET status = 'cancelled' WHERE item_id = %s", (item_id,))
 
 # ---------- ออเดอร์ (food_order) ----------
 def search_orders(filters):
@@ -226,8 +238,11 @@ def update_order(order_id, data):
 
 def delete_order(order_id):
     """ลบ ออเดอร์ ตาม order_id"""
-    # TODO: DELETE FROM food_order WHERE order_id=%s
-    return run_command("delete from food_order where order_id=%s", (order_id,))
+    # ตรวจสอบสถานะออร์เดอร์ก่อนลบ ป้องกันการลบประวัติการขาย
+    rows = run_query("SELECT status FROM food_order WHERE order_id = %s", (order_id,))
+    if rows and rows[0]["status"] == "paid":
+        raise ValueError(f"ไม่สามารถลบออร์เดอร์รหัส {order_id} ได้เนื่องจากชำระเงินแล้ว (เพื่อรักษาประวัติการขาย)")
+    return run_command("DELETE FROM food_order WHERE order_id=%s", (order_id,))
 
 
 # ============================================================
@@ -365,11 +380,15 @@ def create_food_order_with_items(data):
             note = item.get("note")
             note = None if note in ("", None) else note
             
-            # Use real price
-            cur.execute("SELECT price FROM menu_item WHERE item_id = %s", (item_id,))
+            # Use real price and check status
+            cur.execute("SELECT price, status FROM menu_item WHERE item_id = %s", (item_id,))
             price_row = cur.fetchone()
             if not price_row:
                 raise ValueError(f"ไม่พบเมนู {item_id}")
+            if price_row[1] == "cancelled":
+                raise ValueError(f"ไม่สามารถสั่งเมนูรหัส {item_id} ได้เนื่องจากถูกยกเลิกไปแล้ว")
+            if price_row[1] == "out_of_stock":
+                raise ValueError(f"ไม่สามารถสั่งเมนูรหัส {item_id} ได้เนื่องจากสินค้าหมด")
             price = price_row[0]
             
             sql_item = "INSERT INTO order_item (order_id, item_id, qty, price, note, cook_id) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -445,13 +464,21 @@ def get_employee(employee_id):
 
 def create_employee(data):
     sql = "INSERT INTO employee (name, job_position, work_status) VALUES (%s, %s, %s)"
-    return run_command(sql, (data["name"], data.get("job_position", "waiter"), data.get("work_status", "active")))
+    return run_command(sql, (data["name"], data.get("job_position", "waiter"), data.get("work_status", "present")))
 
 def update_employee(employee_id, data):
     sql = "UPDATE employee SET name=%s, job_position=%s, work_status=%s WHERE employee_id=%s"
     return run_command(sql, (data["name"], data.get("job_position"), data.get("work_status"), employee_id))
 
 def delete_employee(employee_id):
+    # ตรวจสอบประวัติการทำงาน (ออร์เดอร์, โต๊ะ, หรือการทำอาหาร)
+    orders = run_query("SELECT COUNT(*) AS n FROM food_order WHERE server_id = %s", (employee_id,))
+    tables = run_query("SELECT COUNT(*) AS n FROM dining_table WHERE server_id = %s", (employee_id,))
+    items = run_query("SELECT COUNT(*) AS n FROM order_item WHERE cook_id = %s", (employee_id,))
+    
+    if (orders and orders[0]["n"] > 0) or (tables and tables[0]["n"] > 0) or (items and items[0]["n"] > 0):
+        raise ValueError(f"ไม่สามารถลบพนักงานรหัส {employee_id} ได้เนื่องจากมีประวัติการรับออร์เดอร์ ดูแลโต๊ะ หรือทำอาหาร")
+        
     return run_command("DELETE FROM employee WHERE employee_id=%s", (employee_id,))
 
 # ---------- โต๊ะอาหาร (dining_table) CRUD ----------
@@ -485,6 +512,10 @@ def update_dining_table(table_id, data):
                              data.get("level_table"), data.get("server_id") if data.get("server_id") not in ("", None) else None, table_id))
 
 def delete_dining_table(table_id):
+    # ตรวจสอบว่ามีออร์เดอร์ใช้งานอยู่หรือไม่ (ทั้งเปิดและชำระแล้วเพื่อรักษาประวัติ)
+    rows = run_query("SELECT COUNT(*) AS n FROM food_order WHERE table_id = %s", (table_id,))
+    if rows and rows[0]["n"] > 0:
+        raise ValueError(f"ไม่สามารถลบโต๊ะ {table_id} ได้เนื่องจากมีประวัติการสั่งอาหาร")
     return run_command("DELETE FROM dining_table WHERE table_id=%s", (table_id,))
 
 # ---------- ชุดอาหาร (combo) CRUD ----------
