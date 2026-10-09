@@ -3,6 +3,7 @@
 #  มองหาคำว่า  # TODO  ทุกฟังก์ชัน — ใช้ %s เป็น placeholder เสมอ (กัน SQL injection)
 # ============================================================
 import mysql.connector
+from mysql.connector import Error as MySQLError
 import config
 
 
@@ -39,9 +40,6 @@ def _todo(name):
 
 # ---------- ลูกค้า (customer) ----------
 def search_customers(filters):
-    # """ค้นหา ลูกค้า ตามเงื่อนไข (name, phone, member_tier)
-    # คำใบ้: เริ่มจาก sql = "SELECT * FROM customer WHERE 1=1"
-    # แล้วต่อเงื่อนไขเฉพาะ filter ที่มีค่า (ข้อความใช้ LIKE %s, อื่น ๆ ใช้ = %s)"""
     sql = "SELECT * FROM customer WHERE 1=1"
     params = []
     if filters.get("name"):
@@ -59,49 +57,52 @@ def search_customers(filters):
     if filters.get("member_tier"):
         sql += " AND member_tier = %s"
         params.append(filters["member_tier"])
-    sql += " ORDER BY cust_id"  # ไม่เรียงชื่อคอลัมน์ใหม่ → หัวตารางเรียงตามลำดับใน SELECT
+    sql += " ORDER BY cust_id"
     return run_query(sql, params)
 
 
 def get_customer(cust_id):
-    # """ดึง ลูกค้า 1 รายการตาม cust_id (ใช้ตอนเปิดฟอร์มแก้ไข)"""
-    # TODO: SELECT * FROM customer WHERE cust_id = %s แล้วคืนแถวเดียว
     rows = run_query("SELECT * FROM customer WHERE cust_id = %s", (cust_id,))
     return rows[0] if rows else None
 
 
 def create_customer(data):
-    # """เพิ่ม ลูกค้า ใหม่ — data มีคีย์: name, phone, member_tier"""
-    # TODO: INSERT INTO customer (...) VALUES (%s, ...)
+    if not data.get("name") or not data.get("phone") or not data.get("email"):
+         raise ValueError("กรุณากรอกข้อมูลให้ครบถ้วน (ชื่อ, เบอร์โทร, อีเมล)")
     if not data.get("birth_date"):
         raise ValueError("กรุณาระบุวันเกิด")
-    sql = "insert into customer (name, phone, email, birth_date, member_tier) values (%s, %s, %s, %s, %s)"
-    return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data["member_tier"]))
+    try:
+        sql = "insert into customer (name, phone, email, birth_date, member_tier) values (%s, %s, %s, %s, %s)"
+        return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data.get("member_tier", "normal")))
+    except MySQLError as err:
+        if err.errno == 1062:
+            raise ValueError("เบอร์โทรศัพท์หรืออีเมลนี้มีอยู่ในระบบแล้ว")
+        raise err
 
 
 def update_customer(cust_id, data):
-    # """แก้ไข ลูกค้า ตาม cust_id"""
-    # TODO: UPDATE customer SET ... WHERE cust_id=%s
+    if not data.get("name") or not data.get("phone") or not data.get("email"):
+         raise ValueError("กรุณากรอกข้อมูลให้ครบถ้วน (ชื่อ, เบอร์โทร, อีเมล)")
     if not data.get("birth_date"):
         raise ValueError("กรุณาระบุวันเกิด")
-    sql = "update customer set name=%s, phone=%s, email=%s, birth_date=%s, member_tier=%s where cust_id=%s"
-    return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data["member_tier"], cust_id))
+    try:
+        sql = "update customer set name=%s, phone=%s, email=%s, birth_date=%s, member_tier=%s where cust_id=%s"
+        return run_command(sql, (data["name"], data["phone"], data["email"], data["birth_date"], data.get("member_tier", "normal"), cust_id))
+    except MySQLError as err:
+        if err.errno == 1062:
+            raise ValueError("เบอร์โทรศัพท์หรืออีเมลนี้มีอยู่ในระบบแล้ว")
+        raise err
 
 
 def delete_customer(cust_id):
-    # """ลบ ลูกค้า ตาม cust_id"""
-    # ตรวจสอบว่ามีประวัติการสั่งอาหารหรือไม่ ป้องกันการสูญหายของประวัติลูกค้าในบิล
     rows = run_query("SELECT COUNT(*) AS n FROM food_order WHERE cust_id = %s", (cust_id,))
     if rows and rows[0]["n"] > 0:
         raise ValueError(f"ไม่สามารถลบลูกค้ารหัส {cust_id} ได้เนื่องจากมีประวัติการสั่งอาหารอยู่")
     return run_command("delete from customer where cust_id=%s", (cust_id,))
 
+
 # ---------- เมนูอาหาร (menu_item) ----------
 def search_items(filters):
-    # """ค้นหา เมนูอาหาร ตามเงื่อนไข (name, category)
-    # คำใบ้: เริ่มต้นจาก sql = "SELECT * FROM menu_item WHERE 1=1"
-    # แล้วต่อเงื่อนไขเฉพาะ filter ที่มีค่า (ข้อความใช้ LIKE %s, อื่น ๆ ใช้ = %s)"""
-    # TODO: เขียน SQL ค้นหาแบบยืดหยุ่นตาม filters (ใช้ %s เสมอ)
     sql = "SELECT * FROM menu_item WHERE 1=1"
     params = []
     if filters.get("name"):
@@ -116,34 +117,30 @@ def search_items(filters):
     if filters.get("status") :
         sql += " AND status = %s"
         params.append(filters["status"])
-    sql += " ORDER BY item_id"  # ไม่เรียงชื่อคอลัมน์ใหม่ → หัวตารางเรียงตามลำดับใน SELECT
+    sql += " ORDER BY item_id"
     return run_query(sql, params)
 
 
 def get_item(item_id):
-    # """ดึง เมนูอาหาร 1 รายการตาม item_id (ใช้ตอนเปิดฟอร์มแก้ไข)"""
-    # TODO: SELECT * FROM menu_item WHERE item_id = %s แล้วคืนแถวเดียว
     rows = run_query("SELECT * FROM menu_item WHERE item_id = %s", (item_id,))
     return rows[0] if rows else None
 
 
 def create_item(data):
-    # """เพิ่ม เมนูอาหาร ใหม่ — data มีคีย์: name, category, price, is_available"""
-    # TODO: INSERT INTO menu_item (...) VALUES (%s, ...)
+    if float(data["price"]) <= 0:
+        raise ValueError("ราคาต้องมากกว่า 0")
     sql = "insert into menu_item (name, category, price, status) values (%s, %s, %s, %s)"
     return run_command(sql, (data["name"], data["category"], data["price"], data["status"]))
 
 
 def update_item(item_id, data):
-    # """แก้ไข เมนูอาหาร ตาม item_id"""
-    # TODO: UPDATE menu_item SET ... WHERE item_id=%s
+    if float(data["price"]) <= 0:
+        raise ValueError("ราคาต้องมากกว่า 0")
     sql = "update menu_item set name=%s, category=%s, price=%s, status=%s where item_id=%s"
     return run_command(sql, (data["name"], data["category"], data["price"], data["status"], item_id))
 
 
 def delete_item(item_id):
-    # """ลบ เมนูอาหาร ตาม item_id (เปลี่ยนสถานะเป็น cancelled แทนการลบจริง)"""
-    # เช็คว่ามีเมนูนี้จริง
     rows = run_query("SELECT item_id, status FROM menu_item WHERE item_id = %s", (item_id,))
     if not rows:
         raise ValueError(f"ไม่พบเมนูอาหารรหัส {item_id}")
@@ -151,18 +148,10 @@ def delete_item(item_id):
         raise ValueError("เมนูนี้ถูกยกเลิกแล้ว")
     return run_command("UPDATE menu_item SET status = 'cancelled' WHERE item_id = %s", (item_id,))
 
+
 # ---------- ออเดอร์ (food_order) ----------
 def search_orders(filters):
-    # """ค้นหา ออเดอร์ ตามเงื่อนไข (cust_id, table_id, status)
-    # ต้องแสดงคอลัมน์: order_id, cust_id, ชื่อลูกค้า, table_id, order_time, status, total (ยอดรวม)
-    # คำใบ้:
-    #   - JOIN customer เพื่อแสดงชื่อลูกค้า
-    #   - total (ยอดรวมของออเดอร์) ไม่ได้เก็บเป็นคอลัมน์ → ต้องคำนวณ = SUM(qty × price)
-    #     LEFT JOIN กับ subquery ที่รวมยอดของแต่ละ order_id (order_item JOIN menu_item ... GROUP BY order_id)
-    #     แล้วใช้ IFNULL(..., 0) เพราะออเดอร์ที่ยังไม่มีรายการอาหารจะได้ NULL
-    #   - เงื่อนไขทุกตัวใช้ = %s"""
-    # # TODO: เขียน SQL ค้นหาแบบยืดหยุ่นตาม filters (ใช้ %s เสมอ)
-    sql = """SELECT o.order_id, o.cust_id, c.name AS cust_name, o.table_id, o.order_time, o.status,
+    sql = """SELECT o.order_id, o.cust_id, c.name AS cust_name, o.table_id, o.server_id, o.order_time, o.status,
                     IFNULL(SUM(oi.qty * mi.price), 0) AS total,
                     GROUP_CONCAT(CONCAT(mi.name, ' x', oi.qty) SEPARATOR ', ') AS order_items
              FROM food_order o
@@ -180,27 +169,17 @@ def search_orders(filters):
     if filters.get("status"):
         sql += " AND o.status = %s"
         params.append(filters["status"])
-    sql += " GROUP BY o.order_id, o.cust_id, c.name, o.table_id, o.order_time, o.status"
+    sql += " GROUP BY o.order_id, o.cust_id, c.name, o.table_id, o.server_id, o.order_time, o.status"
     sql += " ORDER BY o.order_id"
     return run_query(sql, params)
 
 
 def get_order(order_id):
-    # """ดึง ออเดอร์ 1 รายการตาม order_id (ใช้ตอนเปิดฟอร์มแก้ไข)"""
-    # TODO: SELECT * FROM food_order WHERE order_id = %s แล้วคืนแถวเดียว
     rows = run_query("SELECT * FROM food_order WHERE order_id = %s", (order_id,))
     return rows[0] if rows else None
 
 
 def check_table_free(table_id, order_id=None):
-    # """ตรวจก่อนเปิดออเดอร์ (status = 'open') — ถ้าไม่ผ่านให้ raise ValueError("ข้อความ")
-    # (หน้าเว็บจะแสดงข้อความนั้นเป็น alert ให้ผู้ใช้เห็น และไม่บันทึกข้อมูล)
-    # 1) โต๊ะต้องมีอยู่จริง → SELECT ... FROM dining_table WHERE table_id = %s
-    # 2) โต๊ะต้องว่าง = ไม่มีออเดอร์อื่นที่ยัง 'open' อยู่ที่โต๊ะนี้
-    #    → SELECT COUNT(*) AS n FROM food_order WHERE table_id = %s AND status = 'open' AND order_id <> %s
-    #    ★ ตอนเพิ่มใหม่ order_id เป็น None → ส่ง 0 แทน (order_id or 0) จะได้ไม่ตรงกับออเดอร์ไหนเลย
-    # ตัวอย่าง: raise ValueError(f"โต๊ะ {table_id} ยังมีออเดอร์ที่ยังไม่ชำระเงิน")"""
-    # TODO: เขียนการตรวจ 2 ข้อตามคำใบ้
     rows = run_query("SELECT * FROM dining_table WHERE table_id = %s", (table_id,))
     if not rows:
         raise ValueError(f"โต๊ะ {table_id} ไม่มีอยู่จริง")
@@ -211,34 +190,20 @@ def check_table_free(table_id, order_id=None):
 
 
 def create_order(data):
-    # """เพิ่ม ออเดอร์ ใหม่ — data มีคีย์: cust_id, table_id, order_time, status
-    # คำใบ้:
-    #   1) ถ้า status = 'open' → เรียก check_table_free(data["table_id"]) ก่อน (โต๊ะต้องว่าง)
-    #   2) INSERT INTO food_order (...) VALUES (%s, ...)
-    #      (order_time ว่างได้ → blank_to_none(data["order_time"]))"""
-    # TODO: เขียนตามคำใบ้
-    sql = "insert into food_order (cust_id, table_id, order_time, status) values (%s, %s, %s, %s)"
-    if data["status"] == "open":
+    sql = "insert into food_order (cust_id, table_id, server_id, order_time, status) values (%s, %s, %s, %s, %s)"
+    if data["status"] == "open" and data.get("table_id"):
         check_table_free(data["table_id"])
-    return run_command(sql, (data["cust_id"], data["table_id"], blank_to_none(data["order_time"]), data["status"]))
+    return run_command(sql, (blank_to_none(data.get("cust_id")), blank_to_none(data.get("table_id")), blank_to_none(data.get("server_id")), blank_to_none(data.get("order_time")), data["status"]))
 
 
 def update_order(order_id, data):
-    """แก้ไข ออเดอร์ ตาม order_id
-    คำใบ้:
-      1) ถ้า status ใหม่ = 'open' → check_table_free(data["table_id"], order_id)
-         (ส่ง order_id ไปด้วย เพื่อไม่นับออเดอร์ตัวเอง)
-      2) UPDATE food_order SET ... WHERE order_id=%s"""
-    # TODO: เขียนตามคำใบ้
-    sql = "update food_order set cust_id=%s, table_id=%s, order_time=%s, status=%s where order_id=%s"
-    if data["status"] == "open":
+    sql = "update food_order set cust_id=%s, table_id=%s, server_id=%s, order_time=%s, status=%s where order_id=%s"
+    if data["status"] == "open" and data.get("table_id"):
         check_table_free(data["table_id"], order_id)
-    return run_command(sql, (data["cust_id"], data["table_id"], blank_to_none(data["order_time"]), data["status"], order_id))
+    return run_command(sql, (blank_to_none(data.get("cust_id")), blank_to_none(data.get("table_id")), blank_to_none(data.get("server_id")), blank_to_none(data.get("order_time")), data["status"], order_id))
 
 
 def delete_order(order_id):
-    """ลบ ออเดอร์ ตาม order_id"""
-    # ตรวจสอบสถานะออร์เดอร์ก่อนลบ ป้องกันการลบประวัติการขาย
     rows = run_query("SELECT status FROM food_order WHERE order_id = %s", (order_id,))
     if rows and rows[0]["status"] == "paid":
         raise ValueError(f"ไม่สามารถลบออร์เดอร์รหัส {order_id} ได้เนื่องจากชำระเงินแล้ว (เพื่อรักษาประวัติการขาย)")
@@ -247,31 +212,17 @@ def delete_order(order_id):
 
 # ============================================================
 #  REPORT (รายงาน — ใช้ JOIN + GROUP BY + subquery)
-#  ★ ชื่อคอลัมน์ใน SELECT จะกลายเป็นหัวตารางบนเว็บ — ใช้ AS 'ชื่อภาษาไทย' ได้
 # ============================================================
 def report_summary():
-    # """ตัวเลขสรุปบนการ์ด dashboard — คืน dict {ชื่อการ์ด: ตัวเลข}  (1 คีย์ = 1 การ์ด)
-    # ตอนนี้ยังไม่ได้เขียน SQL → คืนค่า None ทุกการ์ด หน้าเว็บจึงแสดง "—" รอไว้
-    # ★ งานของนิสิต: เขียน SQL ตามตัวอย่างด้านล่าง (1 คอลัมน์ใน SELECT = 1 การ์ด
-    #   ชื่อหลัง AS = ข้อความใต้ตัวเลข) แล้วลบ return {...} ชุดล่างสุดทิ้ง
-    # ★ การ์ด "คิดเพิ่มเอง" 2 ใบ: ตั้งชื่อการ์ดใหม่ แล้วเขียน SQL เอง
-    # ★ ผลรวมเงินใช้ IFNULL(SUM(...), 0) — ถ้ายังไม่มีข้อมูล SUM จะได้ NULL"""
-    # ---- ตัวอย่างเมื่อเขียน SQL แล้ว (เอา # ข้างหน้าออก แล้วเติมให้ครบทุกการ์ด) ----
-    # sql = """SELECT
-    #            (SELECT COUNT(*) FROM ...) AS 'ลูกค้า',
-    #            (SELECT ...)               AS 'เมนู',
-    #            ...
-    #          """
-    # return run_query(sql)[0]      ← [0] = เอาแถวแรก (ผลมีแถวเดียว) ได้เป็น dict
-
-    # TODO: ระหว่างที่ยังไม่ได้เขียน SQL คืนค่า None ให้การ์ดแสดง "—" รอไว้
     sql = """SELECT
                (SELECT COUNT(*) FROM customer) AS 'ลูกค้า',
                (SELECT COUNT(*) FROM menu_item) AS 'เมนู',
                (SELECT COUNT(*) FROM food_order) AS 'ออเดอร์',
                (SELECT IFNULL(SUM(oi.qty * mi.price), 0) 
-                FROM order_item oi
-                JOIN menu_item mi ON oi.item_id = mi.item_id) AS 'ยอดขายรวม',
+                FROM food_order o
+                JOIN order_item oi ON o.order_id = oi.order_id
+                JOIN menu_item mi ON oi.item_id = mi.item_id
+                WHERE o.status = 'paid') AS 'ยอดขายรวม',
                (SELECT mi.name 
                 FROM order_item oi
                 INNER JOIN menu_item mi ON oi.item_id = mi.item_id
@@ -282,9 +233,6 @@ def report_summary():
     return run_query(sql)[0]
 
 def report_popular_items():
-    # """📈 เมนูขายดี (Best Sellers)
-    # คำใบ้: JOIN order_item→menu_item, GROUP BY item, SUM(qty), ORDER BY DESC, LIMIT 5"""
-    # TODO: เขียน SQL รายงานนี้ (เขียน JOIN แบบ explicit INNER JOIN ... ON ...)
     sql = """SELECT mi.name AS 'เมนู', SUM(oi.qty) AS 'จำนวนขาย'
              FROM order_item oi
              INNER JOIN menu_item mi ON oi.item_id = mi.item_id
@@ -294,21 +242,16 @@ def report_popular_items():
     return run_query(sql)
 
 def report_daily_sales():
-    # """💰 ยอดขายรวมต่อวัน (Daily Sales)
-    # คำใบ้: JOIN food_order→order_item→menu_item, GROUP BY วันที่, SUM(qty*price)"""
-    # TODO: เขียน SQL รายงานนี้ (เขียน JOIN แบบ explicit INNER JOIN ... ON ...)
     sql = """SELECT DATE(o.order_time) AS 'วันที่', SUM(oi.qty * mi.price) AS 'ยอดขายรวม'
              FROM food_order o
              INNER JOIN order_item oi ON o.order_id = oi.order_id
              INNER JOIN menu_item mi ON oi.item_id = mi.item_id
+             WHERE o.status = 'paid'
              GROUP BY DATE(o.order_time)
              ORDER BY DATE(o.order_time)"""
     return run_query(sql)
 
 def report_big_orders():
-    # """🧾 ออเดอร์ยอดเกิน 500 บาท (HAVING)
-    # คำใบ้: GROUP BY order, HAVING SUM(qty*price) > 500"""
-    # TODO: เขียน SQL รายงานนี้ (เขียน JOIN แบบ explicit INNER JOIN ... ON ...)
     sql = """SELECT o.order_id AS 'ออเดอร์', SUM(oi.qty * mi.price) AS 'ยอดรวม'
              FROM food_order o
              INNER JOIN order_item oi ON o.order_id = oi.order_id
@@ -317,14 +260,6 @@ def report_big_orders():
              HAVING SUM(oi.qty * mi.price) > 500"""
     return run_query(sql)
 
-# ============================================================
-#  รายการรายงานที่แสดงบนหน้า /report  (เรียงตามลำดับที่แสดง)
-#  ★ วิธีเพิ่มรายงานใหม่ (ไม่ต้องแก้ไฟล์อื่น):
-#    1) เขียนฟังก์ชัน report_xxx() ด้านบน ให้ return run_query(sql)
-#    2) เพิ่ม 1 บรรทัดในรายการนี้:  ("ชื่อใน-url", "หัวข้อที่แสดง", ชื่อฟังก์ชัน)
-#  ★ รายการนี้ต้องอยู่ท้ายไฟล์ (หลังฟังก์ชันทั้งหมด) ไม่งั้น Python หาชื่อฟังก์ชันไม่เจอ
-#  ★ ห้ามตั้งชื่อ url ว่า "summary" (ใช้แล้วสำหรับการ์ดสรุป)
-# ============================================================
 REPORTS = [
     ("popular-items", "📈 เมนูขายดี (Best Sellers)",        report_popular_items),
     ("daily-sales",   "💰 ยอดขายรวมต่อวัน (Daily Sales)",   report_daily_sales),
@@ -349,6 +284,16 @@ def create_food_order_with_items(data):
         if not server_id:
             raise ValueError("กรุณาเลือกพนักงานรับออเดอร์")
 
+        # เช็คว่าโต๊ะมีจริง
+        cur.execute("SELECT * FROM dining_table WHERE table_id = %s", (table_id,))
+        if not cur.fetchone():
+            raise ValueError(f"โต๊ะ {table_id} ไม่มีอยู่จริง")
+
+        # เช็คพนักงานรับออเดอร์
+        cur.execute("SELECT * FROM employee WHERE employee_id = %s", (server_id,))
+        if not cur.fetchone():
+            raise ValueError(f"พนักงาน {server_id} ไม่มีอยู่จริง")
+
         # เช็คโต๊ะว่าง
         cur.execute("SELECT COUNT(*) AS n FROM food_order WHERE table_id = %s AND status = 'open'", (table_id,))
         if cur.fetchone()[0] > 0:
@@ -370,15 +315,36 @@ def create_food_order_with_items(data):
         if not cook_row:
             cur.execute("SELECT employee_id FROM employee WHERE job_position = 'cook' LIMIT 1")
             cook_row = cur.fetchone()
-        cook_id = cook_row[0] if cook_row else server_id
+        # เปลี่ยนจากการใช้ server_id อัตโนมัติเป็น None ถ้าไม่มี cook เพื่อไม่ให้ผิดบทบาทงานตาม Foreign Key
+        cook_id = cook_row[0] if cook_row else None
         
         # Insert items
         items = data.get("items", [])
+        
+        # จัดกลุ่มไอเทมกรณีสั่งเมนูเดียวกันหลายครั้งในออเดอร์เดียว เพื่อป้องกัน Primary Key (order_id, item_id) ซ้ำ
+        aggregated_items = {}
         for item in items:
             item_id = item["item_id"]
-            qty = item["qty"]
+            qty = int(item["qty"])
+            if qty <= 0:
+                raise ValueError("จำนวนอาหารต้องมากกว่า 0")
+                
             note = item.get("note")
             note = None if note in ("", None) else note
+            
+            if item_id in aggregated_items:
+                aggregated_items[item_id]["qty"] += qty
+                if note:
+                    if aggregated_items[item_id]["note"]:
+                        aggregated_items[item_id]["note"] += f", {note}"
+                    else:
+                        aggregated_items[item_id]["note"] = note
+            else:
+                aggregated_items[item_id] = {"qty": qty, "note": note}
+                
+        for item_id, item_data in aggregated_items.items():
+            qty = item_data["qty"]
+            note = item_data["note"]
             
             # Use real price and check status
             cur.execute("SELECT price, status FROM menu_item WHERE item_id = %s", (item_id,))
@@ -390,6 +356,9 @@ def create_food_order_with_items(data):
             if price_row[1] == "out_of_stock":
                 raise ValueError(f"ไม่สามารถสั่งเมนูรหัส {item_id} ได้เนื่องจากสินค้าหมด")
             price = price_row[0]
+            
+            if price <= 0:
+                raise ValueError("ราคาอาหารต้องมากกว่า 0")
             
             sql_item = "INSERT INTO order_item (order_id, item_id, qty, price, note, cook_id) VALUES (%s, %s, %s, %s, %s, %s)"
             cur.execute(sql_item, (order_id, item_id, qty, price, note, cook_id))
@@ -430,8 +399,8 @@ def create_combo_set(data):
 def get_recommended_combos():
     sql = """
         SELECT m.item_id, m.name, m.price,
-               GROUP_CONCAT(sub.name SEPARATOR ', ') AS details,
-               SUM(sub.price) AS original_price
+               GROUP_CONCAT(CONCAT(sub.name, ' (x', c.amount, ')') SEPARATOR ', ') AS details,
+               SUM(sub.price * c.amount) AS original_price
         FROM menu_item m
         JOIN combo c ON m.item_id = c.item_id
         JOIN menu_item sub ON c.sub_item_id = sub.item_id
@@ -471,7 +440,6 @@ def update_employee(employee_id, data):
     return run_command(sql, (data["name"], data.get("job_position"), data.get("work_status"), employee_id))
 
 def delete_employee(employee_id):
-    # ตรวจสอบประวัติการทำงาน (ออร์เดอร์, โต๊ะ, หรือการทำอาหาร)
     orders = run_query("SELECT COUNT(*) AS n FROM food_order WHERE server_id = %s", (employee_id,))
     tables = run_query("SELECT COUNT(*) AS n FROM dining_table WHERE server_id = %s", (employee_id,))
     items = run_query("SELECT COUNT(*) AS n FROM order_item WHERE cook_id = %s", (employee_id,))
@@ -502,17 +470,20 @@ def get_dining_table(table_id):
     return rows[0] if rows else None
 
 def create_dining_table(data):
+    if int(data["seats"]) <= 0:
+        raise ValueError("จำนวนที่นั่งต้องมากกว่า 0")
     sql = "INSERT INTO dining_table (seats, zone, status, level_table, server_id) VALUES (%s, %s, %s, %s, %s)"
     return run_command(sql, (data["seats"], data["zone"], data.get("status", "available"),
-                             data.get("level_table", "standard"), data.get("server_id") if data.get("server_id") not in ("", None) else None))
+                             data.get("level_table", "normal"), data.get("server_id") if data.get("server_id") not in ("", None) else None))
 
 def update_dining_table(table_id, data):
+    if int(data["seats"]) <= 0:
+        raise ValueError("จำนวนที่นั่งต้องมากกว่า 0")
     sql = "UPDATE dining_table SET seats=%s, zone=%s, status=%s, level_table=%s, server_id=%s WHERE table_id=%s"
     return run_command(sql, (data["seats"], data["zone"], data.get("status"),
                              data.get("level_table"), data.get("server_id") if data.get("server_id") not in ("", None) else None, table_id))
 
 def delete_dining_table(table_id):
-    # ตรวจสอบว่ามีออร์เดอร์ใช้งานอยู่หรือไม่ (ทั้งเปิดและชำระแล้วเพื่อรักษาประวัติ)
     rows = run_query("SELECT COUNT(*) AS n FROM food_order WHERE table_id = %s", (table_id,))
     if rows and rows[0]["n"] > 0:
         raise ValueError(f"ไม่สามารถลบโต๊ะ {table_id} ได้เนื่องจากมีประวัติการสั่งอาหาร")
@@ -534,10 +505,14 @@ def get_combo(combo_id):
     return rows[0] if rows else None
 
 def create_combo(data):
+    if int(data.get("amount", 1)) <= 0:
+        raise ValueError("จำนวนต้องมากกว่า 0")
     sql = "INSERT INTO combo (item_id, sub_item_id, amount) VALUES (%s, %s, %s)"
     return run_command(sql, (data["item_id"], data["sub_item_id"], data.get("amount", 1)))
 
 def update_combo(combo_id, data):
+    if int(data.get("amount", 1)) <= 0:
+        raise ValueError("จำนวนต้องมากกว่า 0")
     sql = "UPDATE combo SET item_id=%s, sub_item_id=%s, amount=%s WHERE combo_id=%s"
     return run_command(sql, (data["item_id"], data["sub_item_id"], data.get("amount", 1), combo_id))
 
