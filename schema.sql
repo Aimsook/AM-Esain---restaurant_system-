@@ -5,13 +5,13 @@
 --  ต้องมี: PK ทุกตาราง, FK ครบ, ชื่อตรงกับ db.py, sample data
 -- ============================================================
 
-DROP TABLE defaultdb.combo;
-DROP TABLE defaultdb.customer;
-DROP TABLE defaultdb.dining_table;
-DROP TABLE defaultdb.employee;
-DROP TABLE defaultdb.food_order;
-DROP TABLE defaultdb.menu_item;
-DROP TABLE defaultdb.order_item;
+-- DROP TABLE defaultdb.combo;
+-- DROP TABLE defaultdb.customer;
+-- DROP TABLE defaultdb.dining_table;
+-- DROP TABLE defaultdb.employee;
+-- DROP TABLE defaultdb.food_order;
+-- DROP TABLE defaultdb.menu_item;
+-- DROP TABLE defaultdb.order_item;
 
 
 CREATE TABLE customer (
@@ -28,10 +28,10 @@ CONSTRAINT	uni_mail	UNIQUE		(email),
 CONSTRAINT	chk_tier	CHECK		(member_tier IN ('normal','silver','gold','vip'))
 );
 CREATE TABLE menu_item (
-    item_id			int				auto_increment,
+    item_id			int					auto_increment,
     name			varchar(100)		NOT NULL,
     category		varchar(100)		NOT null,
-    price			decimal(10,2)	NOT null,	
+    price			decimal(10,2)		NOT null,	
     status			varchar(100)		NOT NULL,
     
 CONSTRAINT	pk_item 	PRIMARY KEY	(item_id),
@@ -50,8 +50,8 @@ CONSTRAINT	chk_job		CHECK		(job_position IN ('waiter','cook')),
 CONSTRAINT	chk_work	CHECK		(work_status	  IN ('present','absent'))
 );
 CREATE TABLE dining_table (
-    table_id		int				auto_increment,
-    seats			int				NOT NULL,
+    table_id		int					auto_increment,
+    seats			int					NOT NULL,
     ZONE			varchar(100)		NOT NULL,
     status			varchar(100)		NOT NULL,
     level_table		varchar(100)		DEFAULT	'normal',
@@ -62,10 +62,10 @@ CONSTRAINT 	chk_seats 	CHECK (seats > 0),
 CONSTRAINT	chk_zone	CHECK		(ZONE IN ('A','B','C')),
 CONSTRAINT 	chk_std		CHECK		(status IN ('available','occupied')),
 CONSTRAINT 	chk_lvt		CHECK		(level_table IN ('normal','vip')),
-CONSTRAINT	tab_fk_emp	FOREIGN KEY	(server_id) REFERENCES employee(employee_id)
+CONSTRAINT	tab_fk_emp	FOREIGN KEY	(server_id) REFERENCES employee(employee_id)	ON DELETE SET null 	ON UPDATE CASCADE
 );
 CREATE TABLE food_order (
-    order_id		int				auto_increment,
+    order_id		int					auto_increment,
     cust_id			int,
     TABLE_id		int,
     server_id		int,
@@ -73,9 +73,9 @@ CREATE TABLE food_order (
     status			varchar(100)		NOT NULL,
     
 CONSTRAINT	pk_fod		PRIMARY KEY	(order_id),
-CONSTRAINT	fod_fk_cus	FOREIGN KEY	(cust_id) 	REFERENCES customer(cust_id),
-CONSTRAINT	fod_fk_tab	FOREIGN KEY	(table_id) 	REFERENCES dining_table(table_id),
-CONSTRAINT 	fod_fk_emp	FOREIGN KEY (server_id)	REFERENCES employee(employee_id),
+CONSTRAINT	fod_fk_cus	FOREIGN KEY	(cust_id) 	REFERENCES customer(cust_id)		ON DELETE SET null 		ON UPDATE CASCADE,
+CONSTRAINT	fod_fk_tab	FOREIGN KEY	(table_id) 	REFERENCES dining_table(table_id)	ON DELETE SET null 		ON UPDATE CASCADE,
+CONSTRAINT 	fod_fk_emp	FOREIGN KEY (server_id)	REFERENCES employee(employee_id)	ON DELETE SET null		ON UPDATE CASCADE,
 CONSTRAINT	chk_stf		CHECK		(status IN ('open','paid'))
 );
 CREATE TABLE order_item (         -- M:N: food_order × menu_item
@@ -87,11 +87,11 @@ CREATE TABLE order_item (         -- M:N: food_order × menu_item
     cook_id			int,
     
 CONSTRAINT	pk_ord_itm		PRIMARY KEY	(order_id,item_id),
-CONSTRAINT 	ord_fk_ord		FOREIGN KEY (order_id)	REFERENCES food_order(order_id)  ON DELETE cascade ON UPDATE CASCADE,
-CONSTRAINT 	ord_fk_item		FOREIGN KEY (item_id)	REFERENCES menu_item(item_id),
+CONSTRAINT 	ord_fk_ord		FOREIGN KEY (order_id)	REFERENCES food_order(order_id)		ON DELETE cascade 	ON UPDATE CASCADE,
+CONSTRAINT 	ord_fk_item		FOREIGN KEY (item_id)	REFERENCES menu_item(item_id)		ON DELETE restrict	ON UPDATE CASCADE,
 CONSTRAINT 	chk_qty			CHECK (qty > 0),
 CONSTRAINT	chk_price_itm	CHECK (price > 0),
-CONSTRAINT 	ord_fk_cook		FOREIGN KEY (cook_id)	REFERENCES employee(employee_id)
+CONSTRAINT 	ord_fk_cook		FOREIGN KEY (cook_id)	REFERENCES employee(employee_id)	ON DELETE SET null	ON UPDATE CASCADE
 );
 CREATE TABLE combo (              -- M:N: menu_item × menu_item
     combo_id		int			auto_increment,
