@@ -6,7 +6,7 @@
 -- ============================================================
 CREATE TABLE customer (
     cust_id			INT 				AUTO_INCREMENT,
-    name				varchar(100)		NOT NULL,
+    name			varchar(100)		NOT NULL,
     phone			varchar(10)		NOT null,
     email			varchar(100)		NOT null,
     birth_date		date				NOT null,
@@ -14,50 +14,50 @@ CREATE TABLE customer (
     
 CONSTRAINT	pk_cus 		PRIMARY KEY	(cust_id),
 CONSTRAINT	uni_pho		UNIQUE		(phone),
-CONSTRAINT	uni_mail		UNIQUE		(email),
-CONSTRAINT	chk_tier		CHECK		(member_tier IN ('normal','silver','gold','vip'))
+CONSTRAINT	uni_mail	UNIQUE		(email),
+CONSTRAINT	chk_tier	CHECK		(member_tier IN ('normal','silver','gold','vip'))
 );
 CREATE TABLE menu_item (
     item_id			int				auto_increment,
-    name				varchar(100)		NOT NULL,
-    category			varchar(100)		NOT null,
+    name			varchar(100)		NOT NULL,
+    category		varchar(100)		NOT null,
     price			decimal(10,2)	NOT null,	
     status			varchar(100)		NOT NULL,
     
-CONSTRAINT	pk_item 		PRIMARY KEY	(item_id),
+CONSTRAINT	pk_item 	PRIMARY KEY	(item_id),
 CONSTRAINT	chk_cat		CHECK		(category IN ('meat','dessert','drink')),
 CONSTRAINT	chk_price	CHECK		(price > 0),
 CONSTRAINT	chk_sts		CHECK		(status IN ('normal','out_of_stock','cancelled'))
 );
 CREATE TABLE employee (
-	employee_id		int				auto_increment,
+	employee_id			int				auto_increment,
 	name				varchar(100)		NOT NULL,
 	job_position		varchar(100)	NOT NULL,
-	work_status		varchar(100)		NOT NULL,
+	work_status			varchar(100)		NOT NULL,
 	
 CONSTRAINT	pk_emp		PRIMARY KEY	(employee_id),
 CONSTRAINT	chk_job		CHECK		(job_position IN ('waiter','cook')),
-CONSTRAINT	chk_work		CHECK		(work_status	  IN ('present','absent'))
+CONSTRAINT	chk_work	CHECK		(work_status	  IN ('present','absent'))
 );
 CREATE TABLE dining_table (
-    table_id			int				auto_increment,
+    table_id		int				auto_increment,
     seats			int				NOT NULL,
-    ZONE				varchar(100)		NOT NULL,
+    ZONE			varchar(100)		NOT NULL,
     status			varchar(100)		NOT NULL,
     level_table		varchar(100)		DEFAULT	'normal',
     server_id		int,
     
 CONSTRAINT	pk_tab 		PRIMARY KEY	(table_id), 
 CONSTRAINT 	chk_seats 	CHECK (seats > 0),
-CONSTRAINT	chk_zone		CHECK		(ZONE IN ('A','B','C')),
+CONSTRAINT	chk_zone	CHECK		(ZONE IN ('A','B','C')),
 CONSTRAINT 	chk_std		CHECK		(status IN ('available','occupied')),
 CONSTRAINT 	chk_lvt		CHECK		(level_table IN ('normal','vip')),
 CONSTRAINT	tab_fk_emp	FOREIGN KEY	(server_id) REFERENCES employee(employee_id)
 );
 CREATE TABLE food_order (
-    order_id			int				auto_increment,
+    order_id		int				auto_increment,
     cust_id			int,
-    TABLE_id			int,
+    TABLE_id		int,
     server_id		int,
     order_time		datetime,
     status			varchar(100)		NOT NULL,
@@ -69,11 +69,11 @@ CONSTRAINT 	fod_fk_emp	FOREIGN KEY (server_id)	REFERENCES employee(employee_id),
 CONSTRAINT	chk_stf		CHECK		(status IN ('open','paid'))
 );
 CREATE TABLE order_item (         -- M:N: food_order × menu_item
-    order_id			int,
+    order_id		int,
     item_id			int,
     qty				int				NOT NULL,
     price			decimal(10,2)	NOT null,
-    note				varchar(100),
+    note			varchar(100),
     cook_id			int,
     
 CONSTRAINT	pk_ord_itm		PRIMARY KEY	(order_id,item_id),
@@ -84,7 +84,7 @@ CONSTRAINT	chk_price_itm	CHECK (price > 0),
 CONSTRAINT 	ord_fk_cook		FOREIGN KEY (cook_id)	REFERENCES employee(employee_id)
 );
 CREATE TABLE combo (              -- M:N: menu_item × menu_item
-    combo_id			int			auto_increment,
+    combo_id		int			auto_increment,
     item_id			int,
     sub_item_id		int,
     amount			int			NOT null,
