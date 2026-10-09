@@ -4,10 +4,20 @@
 --         เมนูชุด combo = M:N (menu_item × menu_item)
 --  ต้องมี: PK ทุกตาราง, FK ครบ, ชื่อตรงกับ db.py, sample data
 -- ============================================================
+
+DROP TABLE defaultdb.combo;
+DROP TABLE defaultdb.customer;
+DROP TABLE defaultdb.dining_table;
+DROP TABLE defaultdb.employee;
+DROP TABLE defaultdb.food_order;
+DROP TABLE defaultdb.menu_item;
+DROP TABLE defaultdb.order_item;
+
+
 CREATE TABLE customer (
     cust_id			INT 				AUTO_INCREMENT,
     name			varchar(100)		NOT NULL,
-    phone			varchar(10)		NOT null,
+    phone			varchar(10)			NOT null,
     email			varchar(100)		NOT null,
     birth_date		date				NOT null,
     member_tier		varchar(100)		DEFAULT 'normal',
@@ -77,7 +87,7 @@ CREATE TABLE order_item (         -- M:N: food_order × menu_item
     cook_id			int,
     
 CONSTRAINT	pk_ord_itm		PRIMARY KEY	(order_id,item_id),
-CONSTRAINT 	ord_fk_ord		FOREIGN KEY (order_id)	REFERENCES food_order(order_id),
+CONSTRAINT 	ord_fk_ord		FOREIGN KEY (order_id)	REFERENCES food_order(order_id)  ON DELETE cascade ON UPDATE CASCADE,
 CONSTRAINT 	ord_fk_item		FOREIGN KEY (item_id)	REFERENCES menu_item(item_id),
 CONSTRAINT 	chk_qty			CHECK (qty > 0),
 CONSTRAINT	chk_price_itm	CHECK (price > 0),
@@ -90,8 +100,8 @@ CREATE TABLE combo (              -- M:N: menu_item × menu_item
     amount			int			NOT null,
     
 CONSTRAINT	pk_com		PRIMARY KEY	(combo_id),
-CONSTRAINT	com_fk_itm	FOREIGN KEY	(item_id) 		REFERENCES menu_item(item_id),
-CONSTRAINT	itm_fk_itm	FOREIGN KEY	(sub_item_id) 	REFERENCES menu_item(item_id),
+CONSTRAINT	com_fk_itm	FOREIGN KEY	(item_id) 		REFERENCES menu_item(item_id) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT	itm_fk_itm	FOREIGN KEY	(sub_item_id) 	REFERENCES menu_item(item_id) ON DELETE CASCADE ON UPDATE CASCADE,
 CONSTRAINT 	chk_amount	CHECK (amount > 0)
 );
 
