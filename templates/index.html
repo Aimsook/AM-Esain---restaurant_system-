@@ -22,8 +22,9 @@
         <h1>ยินดีต้อนรับสู่ AM Esain! 🍴</h1>
         <p>จัดการร้านอาหารของคุณให้ง่ายขึ้น ดูเมนู ลูกค้า โต๊ะ และออเดอร์ได้ในที่เดียว</p>
       </div>
-      <div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button type="button" id="quickOrderBtn" class="btn primary" style="font-size: 16px; padding: 12px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: relative; z-index: 10; cursor: pointer;">🍽️ สั่งอาหาร</button>
+        <button type="button" id="comboBtn" class="btn add" style="font-size: 16px; padding: 12px 24px; position: relative; z-index: 10; cursor: pointer;">🍱 จัดเซ็ตอาหาร</button>
       </div>
     </div>
 
@@ -60,6 +61,21 @@
         <div class="stat-label" id="dashExtra2Label">คิดเพิ่มเอง 2</div>
       </div>
     </div>
+
+    <!-- ===== Birthday Banner ===== -->
+    <section class="card birthday-banner hidden" id="birthdayBanner">
+      <div class="birthday-banner-head">
+        <h3 style="margin-bottom:0">🎂 ลูกค้าที่เกิดเดือนนี้</h3>
+        <span class="badge birthday" id="birthdayCount">0 คน</span>
+      </div>
+      <div id="birthdayList" class="birthday-list"></div>
+    </section>
+
+    <!-- ===== Recommended Sets ===== -->
+    <section class="card">
+      <h3>🍱 เซตแนะนำ <span style="font-size:12px;color:var(--mute);font-weight:600">(เรียงเซตสุขภาพก่อน)</span></h3>
+      <div id="recommendedGrid" class="recommended-grid"></div>
+    </section>
 
     <!-- ===== Navigation Tabs ===== -->
     <div class="tabs">
@@ -116,7 +132,7 @@
         <span class="delete-icon">🗑️</span>
       </div>
       <h3 class="delete-title">ยืนยันการลบข้อมูล</h3>
-      <p class="delete-desc">คุณต้องการลบเมนูนี้ใช่หรือไม่?</p>
+      <p class="delete-desc" id="deleteDesc">คุณต้องการลบข้อมูลนี้ใช่หรือไม่?</p>
       
       <div id="deleteItemDetails" class="delete-item-details">
         <!-- populated dynamically -->
@@ -143,19 +159,21 @@
       <div class="modal-body">
         <div class="modal-field">
           <label class="modal-label">👤 ลูกค้า</label>
-          <select id="orderCustId" class="modal-input"></select>
+          <select id="orderCustId" class="modal-input" onchange="onOrderCustomerChange()"></select>
+          <div id="orderBirthdayPromo" class="birthday-promo hidden"></div>
         </div>
         <div class="modal-field">
-          <label class="modal-label">🪑 โต๊ะ</label>
-          <select id="orderTableId" class="modal-input"></select>
+          <label class="modal-label">🪑 โต๊ะ (เฉพาะโต๊ะว่าง)</label>
+          <select id="orderTableId" class="modal-input" onchange="onOrderTableChange()"></select>
         </div>
           <div class="modal-field">
-            <label class="modal-label">👨‍🍳 พนักงาน/ผู้รับออเดอร์</label>
+            <label class="modal-label">👨‍🍳 พนักงานรับออเดอร์ (waiter)</label>
             <select id="orderServerId" class="modal-input"></select>
+            <div id="orderServerHint" class="field-hint"></div>
           </div>
         <div class="modal-field">
           <label class="modal-label">🍔 รายการอาหาร</label>
-          <div id="orderItemsContainer" style="max-height: 250px; overflow-y: auto; border: 2px solid #E8ECF4; border-radius: 12px; padding: 10px;">
+          <div id="orderItemsContainer" style="max-height: 320px; overflow-y: auto; border: 2px solid #E8ECF4; border-radius: 12px; padding: 10px;">
              <!-- list of menus -->
           </div>
         </div>

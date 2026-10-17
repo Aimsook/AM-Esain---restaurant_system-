@@ -1,5 +1,5 @@
 /* ============================================================
-   style.css — Sunny Spoon Restaurant 🍴
+   style.css — AM Esain Restaurant 🍴
    Bright Colorful Modern Restaurant Dashboard
    ============================================================ */
 
@@ -1688,3 +1688,488 @@ select.modal-input {
 .toast-content { flex: 1; }
 .toast-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
 .toast-desc { font-size: 13.5px; color: var(--mute); }
+
+/* ============================================================
+   AM Esain — เพิ่มสไตล์สำหรับฟีเจอร์ใหม่
+   ============================================================ */
+
+/* ---------- Utility ---------- */
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.hidden { display: none !important; }
+.actions-cell { white-space: nowrap; }
+.actions-cell .btn { margin-bottom: 4px; }
+
+/* ---------- Extra badge colors ---------- */
+.badge.birthday {
+  background: linear-gradient(135deg, #FFE5F1, #FFC7E3);
+  color: #B72D6B;
+}
+.badge.birthday-used {
+  background: #E8FFF0;
+  color: var(--green);
+}
+.badge.health {
+  background: #E5FFE8;
+  color: #227A3C;
+}
+.badge.combo {
+  background: #E5F0FF;
+  color: var(--blue);
+}
+.badge.present {
+  background: #E8FFF0;
+  color: #227A3C;
+}
+.badge.absent {
+  background: #FFE5E5;
+  color: #B72D2D;
+}
+.badge.available {
+  background: #E8FFF0;
+  color: #227A3C;
+}
+.badge.occupied {
+  background: #FFE5E5;
+  color: #B72D2D;
+}
+.badge.waiter {
+  background: #E5F0FF;
+  color: var(--blue);
+}
+.badge.cook {
+  background: #FFF0E5;
+  color: var(--orange);
+}
+.badge.on-dark {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* ---------- Birthday banner ---------- */
+.birthday-banner {
+  background: linear-gradient(135deg, #FFF4FA 0%, #FFF8F0 55%, #FFF3D9 100%);
+  border: 2px solid #FFD1E6;
+  padding: 20px 24px;
+}
+.birthday-banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.birthday-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.birthday-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 2px solid #FFE0EE;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 14px rgba(255, 107, 157, 0.08);
+}
+.birthday-chip.today {
+  border-color: #FF6B9D;
+  background: linear-gradient(135deg, #FFF0F7, #FFFFFF);
+  box-shadow: 0 6px 22px rgba(255, 107, 157, 0.25);
+  animation: birthdayPulse 1.8s ease-in-out infinite;
+}
+.birthday-chip-icon { font-size: 28px; }
+.birthday-chip-body { flex: 1; min-width: 0; }
+.birthday-chip-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.birthday-chip-meta {
+  font-size: 12.5px;
+  color: var(--mute);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.birthday-today-text {
+  display: inline-block;
+  font-size: 11.5px;
+  color: #fff;
+  background: linear-gradient(135deg, #FF6B9D, #FF8A3D);
+  border-radius: 20px;
+  padding: 2px 9px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+@keyframes birthdayPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* ---------- Birthday customer card ---------- */
+.customer-card.birthday-today {
+  border: 2px solid #FF6B9D;
+  background: linear-gradient(160deg, #FFF5FA, #FFFFFF 60%);
+  box-shadow: 0 10px 34px rgba(255, 107, 157, 0.22);
+}
+.birthday-ribbon {
+  position: absolute;
+  top: 12px;
+  right: -34px;
+  transform: rotate(35deg);
+  background: linear-gradient(135deg, #FF6B9D, #FF8A3D);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 40px;
+  box-shadow: 0 3px 10px rgba(255, 107, 157, 0.35);
+}
+.birthday-date {
+  font-size: 12.5px;
+  color: #B72D6B;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ---------- Birthday promo in order modal ---------- */
+.birthday-promo {
+  margin-top: 10px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #FFF4FA;
+  border: 2px dashed #FF9CC4;
+  color: #8A2450;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.birthday-promo.show { display: block; }
+.birthday-promo.today {
+  background: linear-gradient(135deg, #FFF0F7, #FFF6E5);
+  border-color: #FF6B9D;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(255, 107, 157, 0.18);
+}
+.field-hint {
+  font-size: 12.5px;
+  margin-top: 6px;
+  color: var(--mute);
+  min-height: 16px;
+}
+.field-hint.ok { color: var(--green); font-weight: 700; }
+.field-hint.warn { color: #B72D2D; font-weight: 700; }
+
+/* ---------- Health / birthday set cards ---------- */
+.food-card.health-set { border: 2px solid #BFE8C9; }
+.food-card.birthday-set { border: 2px solid #FFC7E3; }
+.food-card-footer { flex-wrap: wrap; }
+.set-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 20px 12px;
+  font-size: 12.5px;
+  color: var(--mute);
+  font-weight: 600;
+}
+.set-summary .saving {
+  color: #227A3C;
+  background: #E8FFF0;
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+/* ---------- Order cards ---------- */
+.order-card-cooks {
+  padding: 0 20px 12px;
+  font-size: 12.5px;
+  color: var(--mute);
+  font-weight: 600;
+}
+
+/* ---------- Buttons extra colors ---------- */
+.btn.green {
+  background: var(--grad-green);
+  color: #fff;
+  border-color: var(--green);
+  box-shadow: 0 4px 15px rgba(91, 198, 122, 0.25);
+}
+.btn.green:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(91, 198, 122, 0.35); }
+.btn.orange {
+  background: var(--grad-orange);
+  color: #fff;
+  border-color: var(--orange);
+  box-shadow: 0 4px 15px rgba(255, 138, 61, 0.25);
+}
+.btn.orange:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 138, 61, 0.35); }
+.btn.red {
+  background: var(--grad-red);
+  color: #fff;
+  border-color: var(--red);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.25);
+}
+.btn.red:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.35); }
+
+/* ---------- Employee cards ---------- */
+.employee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.employee-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+  border: 2px solid transparent;
+  transition: var(--transition);
+}
+.employee-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+.employee-card.present { border-color: #BFE8C9; }
+.employee-card.absent { border-color: #FFC9C9; background: linear-gradient(160deg, #FFF8F8, #FFFFFF 55%); }
+.employee-head { display: flex; align-items: center; gap: 12px; }
+.employee-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--cream-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.employee-name { font-size: 16px; font-weight: 800; color: var(--ink); }
+.workload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.employee-card.absent .workload-grid { grid-template-columns: repeat(2, 1fr); }
+.workload-box {
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 8px;
+  text-align: center;
+}
+.workload-value { font-size: 19px; font-weight: 800; color: var(--orange); }
+.workload-label { font-size: 10.5px; font-weight: 700; color: var(--mute); margin-top: 2px; }
+.employee-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- Table reassignment warning ---------- */
+.table-warning {
+  background: linear-gradient(135deg, #FFF4E5, #FFF8F0);
+  border: 2px solid #FFD08A;
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(255, 138, 61, 0.10);
+}
+.table-warning-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #8A4A00;
+  margin-bottom: 12px;
+}
+.warning-list { display: flex; flex-direction: column; gap: 8px; }
+.warning-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #FFE0B8;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- Table cards ---------- */
+.table-card-footer {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.zone-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.zone-A { background: #E5F0FF; color: var(--blue); }
+.zone-B { background: #E5FFE8; color: #227A3C; }
+.zone-C { background: #F0E5FF; color: var(--purple); }
+.zone-card-A { background: linear-gradient(170deg, #F7FAFF, #FFFFFF 55%); }
+.zone-card-B { background: linear-gradient(170deg, #F7FFF9, #FFFFFF 55%); }
+.zone-card-C { background: linear-gradient(170deg, #FAF7FF, #FFFFFF 55%); }
+
+/* ---------- Order modal item rows ---------- */
+.order-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--cream);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 6px 0 8px;
+}
+.order-group-title span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mute);
+}
+.order-group-title.birthday-group {
+  background: #FFF0F7;
+  color: #8A2450;
+}
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.order-item-row:last-child { border-bottom: none; }
+.order-item-row.birthday-set-row {
+  background: #FFF8FC;
+  border: 1px dashed #FFC7E3;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.order-item-row.birthday-set-row.eligible {
+  background: linear-gradient(135deg, #FFF0F7, #FFF8F0);
+  border-color: #FF6B9D;
+  box-shadow: 0 4px 14px rgba(255, 107, 157, 0.14);
+}
+.order-item-row.birthday-set-row.not-eligible { opacity: 0.82; }
+.order-item-info { flex: 1; min-width: 170px; }
+.order-item-name { font-weight: 700; font-size: 14px; color: var(--ink); }
+.order-item-price { color: var(--orange); font-size: 13px; font-weight: 700; margin-top: 2px; }
+.order-item-note { color: #B72D6B; font-size: 11.5px; font-weight: 600; margin-top: 3px; }
+.order-item-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.order-qty { width: 24px; text-align: center; font-weight: 800; font-size: 15px; }
+.order-note-input { width: 110px !important; padding: 5px 8px !important; font-size: 12px !important; }
+
+/* ---------- Combo modal ---------- */
+.combo-item-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.combo-item-label:last-child { border-bottom: none; }
+.combo-item-name { flex: 1; font-weight: 700; font-size: 13.5px; }
+.combo-item-price { color: var(--orange); font-size: 13px; font-weight: 700; }
+
+/* ---------- Set detail modal ---------- */
+.set-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.set-detail-summary > div {
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.set-detail-summary span { display: block; font-size: 11.5px; margin-bottom: 4px; }
+.set-detail-summary strong { font-size: 17px; font-weight: 800; }
+
+/* ---------- Recommended combo cards ---------- */
+.recommended-card { display: flex; flex-direction: column; }
+.recommended-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.recommended-icon { font-size: 26px; }
+.recommended-name {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 8px 0 10px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+}
+.recommended-details {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  font-size: 13px;
+  opacity: 0.95;
+  line-height: 1.55;
+}
+.recommended-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+}
+.recommended-original {
+  text-decoration: line-through;
+  opacity: 0.75;
+  font-size: 12.5px;
+  margin-right: 6px;
+}
+.recommended-price { font-size: 20px; font-weight: 800; }
+.recommended-saving { font-size: 11.5px; font-weight: 700; margin-top: 2px; opacity: 0.95; }
+.btn.on-dark-btn {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.btn.on-dark-btn:hover { background: rgba(255, 255, 255, 0.38); }
+
+@media (max-width: 640px) {
+  .set-detail-summary { grid-template-columns: 1fr; }
+  .workload-grid { grid-template-columns: repeat(3, 1fr); }
+  .employee-grid { grid-template-columns: 1fr; }
+  .birthday-list { grid-template-columns: 1fr; }
+}
+
+/* ---------- Recommended grid ---------- */
+.recommended-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
