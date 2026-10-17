@@ -280,8 +280,6 @@ def create_customer(data):
         tier = tier.strip()
     if tier is None or tier == "":
         tier = "normal"
-    elif tier not in ("normal", "silver", "gold", "vip"):
-        raise ValueError("ระดับสมาชิกไม่ถูกต้อง (อนุญาต: normal, silver, gold, vip)")
 
     # 2) บันทึก
     try:
