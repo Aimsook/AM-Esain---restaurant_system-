@@ -10,11 +10,11 @@
 # DB_NAME = "prymania_s...."              # TODO: ชื่อฐานข้อมูลของนิสิต
 # DB_PORT = 3306
 
-# DB_HOST = "restaurant-db-imm2519-f6d7.i.aivencloud.com"
-# DB_USER = "avnadmin"
-# DB_PASSWORD = "รหัสผ่านของคุณ" 
-# DB_NAME = "defaultdb"
-# DB_PORT = 22541
+DB_HOST = "restaurant-db-imm2519-f6d7.i.aivencloud.com"
+DB_USER = "avnadmin"
+DB_PASSWORD = "AVNS_60UpAfn9P4ipmDw-edI" 
+DB_NAME = "defaultdb"
+DB_PORT = 22541
 
 # ★ ถ้าใช้ MySQL ในเครื่องตัวเอง (ดูคู่มือหน้า 12) ให้ใช้ค่านี้แทน 4 บรรทัดบน
 # DB_HOST = "localhost"
