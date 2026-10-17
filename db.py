@@ -1637,14 +1637,14 @@ def report_waiter_workload():
     sql = """SELECT e.name AS 'ชื่อ',
                     e.work_status AS 'สถานะ',
                     (SELECT COUNT(*) FROM food_order o
+                     WHERE o.server_id = e.employee_id) AS 'ออเดอร์ทั้งหมด',
+                    (SELECT COUNT(*) FROM food_order o
                      WHERE o.server_id = e.employee_id AND o.status = 'open') AS 'ออเดอร์ที่เปิด',
                     (SELECT COUNT(*) FROM dining_table t
-                     WHERE t.server_id = e.employee_id) AS 'โต๊ะที่ดูแล',
-                    (SELECT COUNT(*) FROM food_order o
-                     WHERE o.server_id = e.employee_id) AS 'ออเดอร์ทั้งหมด'
+                     WHERE t.server_id = e.employee_id) AS 'โต๊ะที่ดูแล'
              FROM employee e
              WHERE e.job_position = 'waiter'
-             ORDER BY e.employee_id"""
+             ORDER BY ออเดอร์ทั้งหมด DESC, e.employee_id"""
     return run_query(sql)
 
 
@@ -1663,7 +1663,7 @@ def report_cook_workload():
                      WHERE oi.cook_id = e.employee_id) AS 'จำนวนออเดอร์'
              FROM employee e
              WHERE e.job_position = 'cook'
-             ORDER BY e.employee_id"""
+             ORDER BY จานที่ทำทั้งหมด DESC, e.employee_id"""
     return run_query(sql)
 
 
@@ -1680,6 +1680,8 @@ def report_tables_need_reassign():
              WHERE e.work_status = 'absent'
              ORDER BY t.table_id"""
     return run_query(sql)
+
+
 
 
 REPORTS = [
