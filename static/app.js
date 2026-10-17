@@ -1050,9 +1050,9 @@ function orderItemRow(item) {
         ${birthday ? `<div class="order-item-note" id="birthdayNote_${id}">🎂 เฉพาะลูกค้าที่เกิดเดือนนี้</div>` : ''}
       </div>
       <div class="order-item-controls">
-        <button type="button" class="btn sm" onclick="updateOrderQty(${id}, -1)">−</button>
-        <span id="orderQty_${id}" class="order-qty">0</span>
-        <button type="button" class="btn sm" onclick="updateOrderQty(${id}, 1)">+</button>
+        <input type="number" id="orderQty_${id}" class="modal-input order-qty-input" value="0" min="0" max="99" step="1" inputmode="numeric"
+               style="width:72px; padding:6px 8px; text-align:center; font-weight:800;" title="กรอกจำนวน (0-99)"
+               onfocus="this.select()" oninput="onOrderQtyInput(this)" onchange="onOrderQtyInput(this, true)">
         <input type="text" id="orderNote_${id}" placeholder="หมายเหตุ" class="modal-input order-note-input" maxlength="100">
       </div>
     </div>
@@ -1136,20 +1136,36 @@ async function openOrderModal() {
   onOrderTableChange();
 }
 
+// อ่านจำนวนจากช่องกรอก: ไม่ใช่ตัวเลขเต็ม/ติดลบ → 0, เกิน 99 → 99
+function readOrderQty(input) {
+  const n = parseInt(input.value, 10);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, 99);
+}
+
+// ผู้ใช้พิมพ์จำนวนเอง (oninput = ระหว่างพิมพ์ปล่อยให้ว่างได้, onchange = ตอนพิมพ์เสร็จจึงปรับค่าให้ถูกต้อง)
+function onOrderQtyInput(input, finalize) {
+  if (finalize) {
+    input.value = readOrderQty(input);
+  } else if (input.value !== '' && readOrderQty(input) !== Number(input.value)) {
+    input.value = readOrderQty(input);
+  }
+  recalculateOrderTotal();
+}
+
+// เพิ่ม/ลดจำนวนด้วยโค้ด (ใช้ตอนกด "สั่งเซตนี้" จากหน้ารายละเอียดเซต)
 function updateOrderQty(itemId, change) {
-  const qtySpan = document.getElementById(`orderQty_${itemId}`);
-  if (!qtySpan) return;
-  let qty = parseInt(qtySpan.innerText, 10) || 0;
-  qty = Math.max(0, qty + change);
-  qtySpan.innerText = qty;
+  const qtyInput = document.getElementById(`orderQty_${itemId}`);
+  if (!qtyInput) return;
+  qtyInput.value = Math.min(99, Math.max(0, readOrderQty(qtyInput) + change));
   recalculateOrderTotal();
 }
 
 function recalculateOrderTotal() {
   let total = 0;
-  document.querySelectorAll('[id^="orderQty_"]').forEach(span => {
-    const qty = parseInt(span.innerText, 10) || 0;
-    const row = span.closest('.order-item-row');
+  document.querySelectorAll('[id^="orderQty_"]').forEach(input => {
+    const qty = readOrderQty(input);
+    const row = input.closest('.order-item-row');
     const price = row ? parseFloat(row.getAttribute('data-price')) || 0 : 0;
     total += qty * price;
   });
@@ -1229,10 +1245,10 @@ async function submitOrder() {
   if (!serverId) { showToast('กรุณาเลือกพนักงานรับออเดอร์', 'เลือก waiter ที่ present เท่านั้น', 'error'); return; }
 
   const items = [];
-  document.querySelectorAll('[id^="orderQty_"]').forEach(span => {
-    const qty = parseInt(span.innerText, 10) || 0;
+  document.querySelectorAll('[id^="orderQty_"]').forEach(input => {
+    const qty = readOrderQty(input);
     if (qty > 0) {
-      const itemId = Number(span.id.replace('orderQty_', ''));
+      const itemId = Number(input.id.replace('orderQty_', ''));
       const item = orderMenuItems.find(x => Number(x.item_id) === itemId);
       const noteEl = document.getElementById('orderNote_' + itemId);
       items.push({ item_id: itemId, qty: qty, note: noteEl ? noteEl.value : '', name: item ? item.name : `เมนู ${itemId}` });
@@ -1240,7 +1256,7 @@ async function submitOrder() {
   });
 
   if (!items.length) {
-    showToast('กรุณาเลือกอาหารอย่างน้อย 1 รายการ', 'กดปุ่ม + เพื่อเพิ่มจำนวน', 'error');
+    showToast('กรุณาเลือกอาหารอย่างน้อย 1 รายการ', 'กรอกจำนวนในช่องหน้ารายการอาหารที่ต้องการ', 'error');
     return;
   }
 
@@ -1400,13 +1416,13 @@ async function openSetDetail(itemId) {
 async function orderSetItem(itemId) {
   document.getElementById('modal').classList.add('hidden');
   await openOrderModal();
-  const span = document.getElementById(`orderQty_${itemId}`);
-  if (!span) {
+  const qtyInput = document.getElementById(`orderQty_${itemId}`);
+  if (!qtyInput) {
     showToast('เมนูนี้ไม่พร้อมขาย', 'อาจถูกยกเลิกหรือสินค้าหมด', 'error');
     return;
   }
   updateOrderQty(itemId, 1);
-  const row = span.closest('.order-item-row');
+  const row = qtyInput.closest('.order-item-row');
   if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -1606,6 +1622,7 @@ window.openOrderModal = openOrderModal;
 window.closeOrderModal = closeOrderModal;
 window.submitOrder = submitOrder;
 window.updateOrderQty = updateOrderQty;
+window.onOrderQtyInput = onOrderQtyInput;
 window.onOrderCustomerChange = onOrderCustomerChange;
 window.onOrderTableChange = onOrderTableChange;
 window.openComboModal = openComboModal;
